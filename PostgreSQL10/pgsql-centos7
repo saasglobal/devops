@@ -1,0 +1,187 @@
+Switch to the root user.
+
+$ su -
+
+Install PostgreSQL 10 on CentOS 7
+
+PostgreSQL publishes rpm packages for all Linux platforms, and their packages are fresher than those available in the OS repositories.
+
+So, you need to add the repository on your machine by installing repo rpm.
+
+rpm -Uvh https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-centos10-10-1.noarch.rpm
+rpm -Uvh https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
+ 
+
+
+Install PostgreSQL 10 using yum command.
+
+
+
+
+Initialize PostgreSQL server
+
+After installing PostgreSQL, you need to initialize it before using for the first time.
+
+/usr/pgsql-10/bin/postgresql-10-setup initdb
+
+PostgreSQL data is typically found /var/lib/pgsql/10/data/ directory.
+Start PostgreSQL server
+
+To start PostgreSQL service, run:
+
+systemctl start postgresql-10
+systemctl restart postgresql-10
+
+
+
+To enable PostgreSQL on system startup, run:
+
+systemctl enable postgresql-10
+
+To check the status of PostgreSQL service, run:
+
+systemctl status postgresql-10
+
+Output:
+
+● postgresql-10.service - PostgreSQL 10 database server
+   Loaded: loaded (/usr/lib/systemd/system/postgresql-10.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2017-10-23 17:54:14 UTC; 6min ago
+ Main PID: 1557 (postmaster)
+   CGroup: /system.slice/postgresql-10.service
+           ├─1557 /usr/pgsql-10/bin/postmaster -D /var/lib/pgsql/10/data/
+           ├─1560 postgres: logger process   
+           ├─1562 postgres: checkpointer process   
+           ├─1563 postgres: writer process   
+           ├─1564 postgres: wal writer process   
+           ├─1565 postgres: autovacuum launcher process   
+           ├─1566 postgres: stats collector process   
+           └─1567 postgres: bgworker: logical replication launcher   
+
+Oct 23 17:54:14 post systemd[1]: Starting PostgreSQL 10 database server...
+Oct 23 17:54:14 post postmaster[1557]: 2017-10-23 17:54:14.578 UTC [1557] LOG:  listening on IPv6 address "::1", port 5432
+Oct 23 17:54:14 post postmaster[1557]: 2017-10-23 17:54:14.578 UTC [1557] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+Oct 23 17:54:14 post postmaster[1557]: 2017-10-23 17:54:14.584 UTC [1557] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+Oct 23 17:54:14 post postmaster[1557]: 2017-10-23 17:54:14.587 UTC [1557] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+Oct 23 17:54:14 post postmaster[1557]: 2017-10-23 17:54:14.597 UTC [1557] LOG:  redirecting log output to logging collector process
+Oct 23 17:54:14 post postmaster[1557]: 2017-10-23 17:54:14.597 UTC [1557] HINT:  Future log output will appear in directory "log".
+Oct 23 17:54:14 post systemd[1]: Started PostgreSQL 10 database server.
+
+Confirm the PostgreSQL listening on port 5432 using netstat command.
+
+netstat -antup | grep 5432
+
+Output:
+
+tcp        0      0 0.0.0.0:5432            0.0.0.0:*               LISTEN      21051/postmaster    
+tcp6       0      0 :::5432                 :::*                    LISTEN      21051/postmaster 
+
+READ: netstat command not found on CentOS 7 / RHEL 7 – Quick Fix
+Access PostgreSQL server
+
+To create a database, log in as postgres (Linux user). Login from the root user or reset the password of postgres user for login.
+
+# su -l postgres
+
+Access Database using the psql command, an interactive front-end terminal for PostgreSQL database.
+
+$ psql
+
+Output:
+
+-bash-4.2$ psql
+psql (10.0)
+Type "help" for help.
+
+postgres=#
+
+Set password for postgres (Database administrator) user.
+
+postgres=# \password
+
+
+
+vim  /var/lib/pgsql/10/data/pg_hba.conf
+
+
+# "local" is for Unix domain socket connections only
+host   all             all              0.0.0.0/0                md5
+# IPv4 local connections:
+host    all             all             127.0.0.1/32              md5
+local   all             all                                       md5
+host     all            postgres        127.0.0.1/32               md5
+
+#host    all             all             127.0.0.1/32            ident
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+#host    all             all             ::1/128                 ident
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            ident
+host    replication     all             ::1/128                 ident
+
+
+
+2. Change the Listen Address in postgresql.conf
+
+On the PostgreSQL database server, by default, the listen address will be localhost in the postgresql.conf file as shown below.
+
+vim /var/lib/pgsql/10/data/postgresql.conf
+
+listen_addresses = '*' 
+
+systemctl restart postgresql-10
+
+
+
+
+CREATE USER "Divine" WITH
+	LOGIN
+	SUPERUSER
+	CREATEDB
+	CREATEROLE
+	INHERIT
+	REPLICATION
+	CONNECTION LIMIT -1
+	PASSWORD 'xxxxxx';
+GRANT postgres, pg_read_all_stats, pg_monitor, pg_read_all_settings, pg_signal_backend, pg_stat_scan_tables, cmon_replication, postgres_exporter TO "Divine" WITH ADMIN OPTION;
+
+
+
+
+
+CREATE TABLESPACE landport
+  OWNER "Divine"
+  LOCATION '/var/lib/pgsql/10/data/pg_tblspc/landport';
+
+ALTER TABLESPACE landport
+  OWNER TO "Divine";
+
+  
+  
+cd /var/lib/pgsql/10/data/pg_tblspc
+mkdir -p landport
+chown -R postgres:postgres landport
+
+
+CREATE DATABASE landport
+    WITH 
+    OWNER = "Divine"
+    TEMPLATE = template1
+    ENCODING = 'UTF8'
+    TABLESPACE = landport
+    CONNECTION LIMIT = -1;
+
+
+
+backup
+
+
+    
+    
+    
+    
+pg_dump  -U postgres landport   --verbose --format=c --blobs >  landport.sql
+pg_restore -U postgres   -d landport    --verbose --format=c --clean < landport-landport.sql
+  

@@ -1,0 +1,10 @@
+[Unit]
+Description=PrismERP Application Service By: Divine IT Limited
+After=network.target
+[Service]
+User=nginx
+Group=nginx
+WorkingDirectory=/var/www/html/prismerp/divineba
+ExecStart=/usr/bin/gunicorn --workers 2 --bind 127.0.0.1:8000 core.wsgi
+[Install]
+WantedBy=multi-user.target

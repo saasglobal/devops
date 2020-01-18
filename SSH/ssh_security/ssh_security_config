@@ -1,0 +1,23 @@
+
+mkdir -p /home/sarkar/.ssh
+
+chmod 700 /home/sarkar/.ssh 
+
+vi /home/sarkar/.ssh/authorized_keys
+
+chmod 640 /home/sarkar/.ssh/authorized_keys
+ 
+mkdir -p /etc/ssh/sarkar
+
+cp /home/sarkar/.ssh/authorized_keys /etc/ssh/sarkar
+
+chmod 755 /etc/ssh/sarkar
+
+chmod 644 /etc/ssh/sarkar/authorized_keys
+
+chown -R sarkar:sarkar /etc/ssh/sarkar
+
+
+visudo
+
+sarkar  ALL=(ALL)       ALL

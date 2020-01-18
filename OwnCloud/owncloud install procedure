@@ -1,0 +1,167 @@
+Steps: 1
+update os at Latest
+[root@localhost ~]# yum update -yum
+
+Steps: 2
+Install PHP 7.1 and the required PHP extensions
+rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+rpm -Uvh http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+
+Steps:3
+Go to repo directory and ennabled  php 7
+root@localhost ~]# cd /etc/yum.repos.d
+[root@localhost yum.repos.d]# vim remi-php71.repo
+and enabled=0 >> enabled=1 and save:x
+
+
+# This repository only provides PHP 7.1 and its extensions
+# NOTICE: common dependencies are in "remi-safe"
+
+[remi-php71]
+name=Remi's PHP 7.1 RPM repository for Enterprise Linux 7 - $basearch
+#baseurl=http://rpms.remirepo.net/enterprise/7/php71/$basearch/
+#mirrorlist=https://rpms.remirepo.net/enterprise/7/php71/httpsmirror
+mirrorlist=http://cdn.remirepo.net/enterprise/7/php71/mirror
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-remi
+
+
+Steps:4
+install PHP 7.1 and several PHP extensions required by ownCloud 
+
+[root@localhost ~]# yum install php php-mysqlnd php-pecl-zip php-xml php-mbstring php-gd php-mcrypt php-pear php-pspell php-pdo php-xml php-intl php-zip php-zlib
+Increase the default post_max_size and upload_max_filesize values in the PHP configuration
+[root@localhost yum.repos.d]# sed -i "s/post_max_size = 8M/post_max_size = 256M/" /etc/php.ini
+[root@localhost yum.repos.d]# sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 256M/" /etc/php.ini
+
+
+
+Steps:5
+Install mysql 8 yum repo
+
+yum install https://repo.mysql.com//mysql80-community-release-el7-3.noarch.rpm
+
+[root@localhost ~]# yum install mysql mysql-server mysql-client mysql-devel -y
+
+add mysql password hash mode
+[root@localhost yum.repos.d]# vim /etc/my.cnf
+
+default-authentication-plugin=mysql_native_password
+sql_mode=''
+
+
+[root@localhost yum.repos.d]# systemctl start mysqld
+[root@localhost yum.repos.d]# systemctl status mysqld
+find mysql password
+[root@localhost yum.repos.d]# cat /var/log/mysqld.log | grep password
+2019-08-27T13:22:55.527969Z 5 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: dd<o)K4F#D-D
+
+Steps:6 
+set mysql password and create user for ownCloud
+
+
+[root@localhost yum.repos.d]# mysql -uroot -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.17
+
+Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql>
+mysql>
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'Div@2019!StP';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql>  ALTER USER 'root'@'localhost' IDENTIFIED BY 'Div@2019!StP';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql>  create database ownclouddb;
+Query OK, 1 row affected (0.02 sec)
+
+mysql> create user 'clouddit'@'localhost' IDENTIFIED WITH mysql_native_password BY 'Div@2019!DiT';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> grant all privileges on ownclouddb.* to clouddit@localhost ;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> flush privileges;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql>exit;
+
+
+Steps:7
+
+Install ownCloud yum repo
+
+[root@localhost yum.repos.d]# sudo rpm --import https://download.owncloud.org/download/repositories/stable/CentOS_7/repodata/repomd.xml.key
+[root@localhost yum.repos.d]# curl -L https://download.owncloud.org/download/repositories/stable/CentOS_7/ce:stable.repo -o /etc/yum.repos.d/ownCloud.repo
+clent expire yum repo
+[root@localhost yum.repos.d]# yum clean expire-cache
+[root@localhost yum.repos.d]# yum install owncloud
+
+
+Steps:7 
+Now configure apache for owncloud
+vi /etc/httpd/conf.d/owncloud.conf
+
+
+<VirtualHost cloud.divineit.net:88>
+ServerAdmin webmaster@cloud.divineit.net
+DocumentRoot "/var/www/html/owncloud/"
+ServerName cloud.divineit.net
+ServerAlias cloud.divineit.net
+
+ErrorLog "/var/log/httpd/cloud.divineit.net-error_log"
+CustomLog "/var/log/httpd/cloud.divineit.net-access_log" combined
+
+<Directory "/var/www/html/owncloud/">
+DirectoryIndex index.html index.php
+Options FollowSymLinks
+AllowOverride All
+Require all granted
+</Directory>
+</VirtualHost>
+
+now create data folder
+
+root@localhost owncloud]# mddir /u01/owncloud/data
+root@localhost owncloud]# chown -R apache:apache data
+
+
+
+
+now  restart appache and hit the domain
+
+Steps:8
+
+smtp configure for ownloud..
+
+vim /var/www/html/owncloud/config
+'installed' => true,
+  'mail_domain' => 'gmail.com',
+  'mail_from_address' => 'divinecloud1',
+  'mail_smtpmode' => 'smtp',
+  'mail_smtphost' => 'smtp.gmail.com',
+  'mail_smtpauthtype' => 'LOGIN',
+  'mail_smtpport' => '465',
+  'mail_smtpsecure' => 'ssl',
+  'mail_smtpauth' => 1,
+  'mail_smtpname' => 'divinecloud1@gmail.com',
+  'mail_smtppassword' => 'rhsbgsvrtcqfkisn',
+);
+~
+
+
+
+admin   Div@Cloud@2019!
+
+

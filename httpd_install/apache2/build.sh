@@ -1,0 +1,8 @@
+#/bin/sh
+yum groupinstall "Development Tools" -y && yum install expat-devel pcre pcre-devel openssl openssl-devel libssl-dev -y wget && wget https://github.com/nghttp2/nghttp2/releases/download/v1.38.0/nghttp2-1.38.0.tar.gz && tar -xf nghttp2-1.38.0.tar.gz && cd nghttp2-1.38.0 &&  ./configure && make  && make install && wget http://www.apache.org/dist/httpd/httpd-2.4.39.tar.gz && wget http://www.apache.org/dist/apr/apr-1.7.0.tar.gz && wget https://www-eu.apache.org/dist//apr/apr-util-1.6.1.tar.gz && tar -xf httpd-2.4.39.tar.gz && tar -xf apr-util-1.6.1.tar.gz && tar -xf apr-1.7.0.tar.gz && mv apr-1.7.0 httpd-2.4.39/srclib/apr &&  mv apr-util-1.6.1 httpd-2.4.39/srclib/apr-util && cd httpd-2.4.39
+
+./configure --enable-ssl --enable-so --enable-http2 --with-mpm=event --enable-mods-shared --enable-http --enable-info --enable-cgi --enable-vhost-alias --enable-rewrite --enable-mods-shared --with-included-apr --with-ssl=/etc/pki/tls --prefix=/usr/local/apache2 --enable-expires --enable-proxy-http2 --enable-proxy-uwsgi  --enable-proxy --enable-proxy-connect --enable-proxy-fdpass --enable-proxy-wstunnel --enable-proxy-ajp  --enable-proxy-balancer --enable-proxy-express --enable-proxy-hcheck --enable-watchdog --enable-info --enable-socache-shmcb --enable-cache-disk --enable-rewrite && make && make install
+
+yum install python-devel -y && wget https://github.com/GrahamDumpleton/mod_wsgi/archive/4.6.5.tar.gz && tar -xf 4.6.5.tar.gz && cd mod_wsgi-4.6.5 && ./configure --with-apxs=/usr/local/apache2/bin/apxs --with-python=/usr/bin/python2.7 &&  make && make install
+
+ln -s /usr/local/apache2/conf /etc/httpd && ln -s /usr/local/apache2/logs /var/log/httpd && ln -s /usr/local/apache2/bin/* /usr/sbin/ 

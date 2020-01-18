@@ -1,0 +1,33 @@
+rpm -ihv https://repo.zabbix.com/zabbix/3.4/rhel/6/x86_64/zabbix-agent-3.4.0-1.el6.x86_64.rpm 
+
+mv /etc/zabbix/zabbix_agentd.conf /etc/zabbix/zabbix_agentd.old && cd /etc/zabbix/ && wget divineit.net:880/zabbix_agentd.conf
+
+service tomcat stop && killall -9 tomcat
+mv /usr/share/tomcat7/ /usr/share/tomcat7_old/
+cd /usr/share/ && wget https://archive.apache.org/dist/tomcat/tomcat-8/v8.0.30/bin/apache-tomcat-8.0.30.tar.gz
+
+tar xf apache-tomcat-8.0.30.tar.gz && mv apache-tomcat-8.0.30 tomcat7 
+cd /usr/share/tomcat7/webapps/ && wget 45.114.84.38/temp/probe310.zip 
+yum install java-1.8.0-openjdk -y 
+mv /usr/share/tomcat7_old/webapps/birt-viewer/ /usr/share/tomcat7/webapps/
+
+cd /usr/share/tomcat7/lib/ && wget divineit.net:880/setenv.sh && wget https://archive.apache.org/dist/tomcat/tomcat-8/v8.0.30/bin/extras/catalina-jmx-remote.jar
+
+# Need to change Djava.rmi.server.hostname value to client machine IP address.
+vim setenv.sh
+------------------------------------------------------------------------------
+export CATALINA_OPTS="$CATALINA_OPTS -Djava.rmi.server.hostname=45.114.84.37"
+-----------------------------------------------------------------------------------------------------------------------------------------
+sh setenv.sh
+mkdir -p /var/lib/zabbix && cd /var/lib/zabbix && wget divineit.net:880/.my.cnf
+
+# For create a MySQL user for zabbix, need to import the SQL. And need to type MySQL pass when it's importing.
+cd /var/lib/zabbix/ && wget divineit.net:880/user.sql && mysql -uroot -p mysql < user.sql
+
+#Need to create a tomcat manager user. We should add those line inside <tomcat-users>  </tomcat-users> section on tomcat user configration file.
+vim /usr/share/tomcat7/conf/tomcat-users.xml
+------------------------------------------------------------------------------
+<role rolename="manager-gui"/>
+<role rolename="admin"/>
+<user username="admin" password="talkana!007" roles="admin,manager-gui" />
+------------------------------------------------------------------------------------------------------------------------------------------
